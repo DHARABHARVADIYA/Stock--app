@@ -14,32 +14,32 @@ class AdminMiddleware
     {
         try {
 
-
+            // Token missing
             if (!$request->bearerToken()) {
                 return response()->json([
                     'status'  => 401,
-                    'message' => 'Token not provided',
-                    'result'  => null
+                    'message' => ['Token not provided'],
+                    'data'    => null
                 ], 401);
             }
 
-
+            // Invalid token / not logged in
             if (!Auth::guard('api')->check()) {
                 return response()->json([
                     'status'  => 401,
-                    'message' => 'Invalid token',
-                    'result'  => null
+                    'message' => ['Invalid token'],
+                    'data'    => null
                 ], 401);
             }
 
             $user = Auth::guard('api')->user();
 
-
+            // Role check
             if ($user->role !== 'admin') {
                 return response()->json([
                     'status'  => 403,
-                    'message' => 'Only admin allowed',
-                    'result'  => null
+                    'message' => ['Only admin allowed'],
+                    'data'    => null
                 ], 403);
             }
 
@@ -47,24 +47,24 @@ class AdminMiddleware
 
             return response()->json([
                 'status'  => 401,
-                'message' => 'Token expired',
-                'result'  => null
+                'message' => ['Token expired'],
+                'data'    => null
             ], 401);
 
         } catch (TokenInvalidException $e) {
 
             return response()->json([
                 'status'  => 401,
-                'message' => 'Token invalid',
-                'result'  => null
+                'message' => ['Token invalid'],
+                'data'    => null
             ], 401);
 
         } catch (\Exception $e) {
 
             return response()->json([
                 'status'  => 401,
-                'message' => 'Unauthorized',
-                'result'  => null
+                'message' => ['Unauthorized'],
+                'data'    => null
             ], 401);
         }
 

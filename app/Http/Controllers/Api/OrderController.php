@@ -8,13 +8,12 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\OrderResource;
-use App\Models\Visit;
 use App\Models\SiteVisit;
 use App\Models\Product;
 
 class OrderController extends Controller
 {
-    // Create a new order with items
+    // ================= STORE =================
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -35,17 +34,31 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 422,
-                'message' => 'Validation Error',
-                'result' => $validator->errors()
+                'message' => $validator->errors()->all(),
+                'result' => (object)[]
             ], 422);
+        }
+
+        $user = auth()->user();
+
+        $siteVisit = SiteVisit::where('id', $request->site_visit_id)
+            ->where('business_code', $user->business_code)
+            ->first();
+
+        if (!$siteVisit) {
+            return response()->json([
+                'status' => 403,
+                'message' => ['Unauthorized site visit access'],
+                'result' => (object)[]
+            ], 403);
         }
 
         $discount = $request->discount ?? 0;
         $billTotal = 0;
 
-        /* ================= CREATE ORDER ================= */
-
         $order = Order::create([
+            'business_code' => $user->business_code,
+            'created_by'    => $user->id,
             'site_visit_id' => $request->site_visit_id,
             'bill_type_id'  => $request->bill_type_id,
             'bill_date'     => $request->bill_date,
@@ -59,17 +72,25 @@ class OrderController extends Controller
             'delivery_address'       => $request->delivery_address,
         ]);
 
-        /* ================= ITEMS ================= */
-
         foreach ($request->items as $item) {
 
-            $product = Product::find($item['product_id']);
+            $product = Product::where('id', $item['product_id'])
+                ->where('business_code', $user->business_code)
+                ->first();
+
+            if (!$product) {
+                return response()->json([
+                    'status' => 403,
+                    'message' => ['Unauthorized product access'],
+                    'result' => (object)[]
+                ], 403);
+            }
 
             if ($product->stock < $item['qty']) {
                 return response()->json([
                     'status' => 400,
-                    'message' => $product->name . ' stock not available',
-                    'result' => null
+                    'message' => [$product->name . ' stock not available'],
+                    'result' => (object)[]
                 ], 400);
             }
 
@@ -84,12 +105,9 @@ class OrderController extends Controller
                 'amount'     => $amount,
             ]);
 
-            // stock minus
             $product->stock -= $item['qty'];
             $product->save();
         }
-
-        /* ================= TOTAL CALCULATION ================= */
 
         $grandTotal = $billTotal - $discount;
 
@@ -98,33 +116,41 @@ class OrderController extends Controller
             'grand_total' => $grandTotal
         ]);
 
-        /* ================= UPDATE SITE VISIT ================= */
-
         SiteVisit::where('id', $request->site_visit_id)
             ->update([
                 'order_id' => $order->id,
                 'order_amount' => $grandTotal
             ]);
 
-        $order->load('items');
+        $order->load([
+            'items.product',
+            'creator'
+        ]);
 
         return response()->json([
             'status' => 200,
-            'message' => 'Order created successfully',
-            'result' => $order
+            'message' => ['Order created successfully'],
+            'result' => new OrderResource($order)
         ]);
     }
 
-    // Get all orders
-
+    // ================= INDEX =================
     public function index()
     {
-        $orders = Order::with([
+        $user = auth()->user();
+
+        $query = Order::with([
             'items.dispatchItems',
-            'siteVisit.site'
+            'siteVisit.site',
+            'creator'
         ])
-            ->orderBy('id', 'desc')
-            ->get();
+            ->where('business_code', $user->business_code);
+
+        if ($user->role == 'sales') {
+            $query->where('created_by', $user->id);
+        }
+
+        $orders = $query->orderBy('id', 'desc')->get();
 
         foreach ($orders as $order) {
 
@@ -132,14 +158,10 @@ class OrderController extends Controller
             $totalDispatched = 0;
 
             foreach ($order->items as $item) {
-                $orderedQty = $item->qty;
-                $dispatchedQty = $item->dispatchItems->sum('dispatch_qty');
-
-                $totalOrdered += $orderedQty;
-                $totalDispatched += $dispatchedQty;
+                $totalOrdered += $item->qty;
+                $totalDispatched += $item->dispatchItems->sum('dispatch_qty');
             }
 
-            // status logic
             if ($totalDispatched == 0) {
                 $order->dispatch_status = 'pending';
             } elseif ($totalDispatched < $totalOrdered) {
@@ -153,13 +175,13 @@ class OrderController extends Controller
         }
 
         return response()->json([
-            'status'  => 200,
-            'message' => 'Orders fetched successfully',
-            'result'  => OrderResource::collection($orders)
+            'status' => 200,
+            'message' => ['Orders fetched successfully'],
+            'result' => OrderResource::collection($orders)
         ]);
     }
 
-    // Get orders by visit
+    // ================= GET BY VISIT =================
     public function getByVisit(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -169,24 +191,27 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 422,
-                'message' => 'Validation Error',
-                'result' => $validator->errors()
+                'message' => $validator->errors()->all(),
+                'result' => (object)[]
             ], 422);
         }
 
-        $orders = Order::with(['items.product', 'billType', 'siteVisit.site'])
+        $user = auth()->user();
+
+        $orders = Order::with(['items.product', 'billType', 'siteVisit.site', 'creator'])
+            ->where('business_code', $user->business_code)
             ->where('site_visit_id', $request->site_visit_id)
             ->orderBy('id', 'desc')
             ->get();
 
         return response()->json([
             'status' => 200,
-            'message' => 'Orders fetched successfully',
+            'message' => ['Orders fetched successfully'],
             'result' => OrderResource::collection($orders)
         ]);
     }
 
-    // Delete order
+    // ================= DELETE =================
     public function destroy(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -196,22 +221,35 @@ class OrderController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 422,
-                'message' => 'Validation Error',
-                'result' => $validator->errors()
+                'message' => $validator->errors()->all(),
+                'result' => (object)[]
             ], 422);
         }
 
-        $order = Order::find($request->id);
+        $user = auth()->user();
+
+        $order = Order::where('business_code', $user->business_code)
+            ->where('id', $request->id)
+            ->first();
+
+        if (!$order) {
+            return response()->json([
+                'status' => 404,
+                'message' => ['Order not found'],
+                'result' => (object)[]
+            ], 404);
+        }
+
         $order->delete();
 
         return response()->json([
             'status' => 200,
-            'message' => 'Order deleted successfully',
-            'result' => null
+            'message' => ['Order deleted successfully'],
+            'result' => (object)[]
         ]);
     }
 
-    // Get order by ID
+    // ================= GET BY ID =================
     public function getById(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -220,52 +258,36 @@ class OrderController extends Controller
 
         if ($validator->fails()) {
             return response()->json([
-                'status'  => 422,
-                'message' => 'Validation Error',
-                'result'  => $validator->errors()
+                'status' => 422,
+                'message' => $validator->errors()->all(),
+                'result' => (object)[]
             ], 422);
         }
+
+        $user = auth()->user();
 
         $order = Order::with([
             'items.product',
             'items.dispatchItems',
-            'dispatch'
+            'dispatch',
+            'creator'
         ])
+            ->where('business_code', $user->business_code)
             ->where('id', $request->order_id)
             ->first();
 
-        $totalOrdered = 0;
-        $totalDispatched = 0;
-
-        foreach ($order->items as $item) {
-
-            $orderedQty = $item->qty;
-            $dispatchedQty = $item->dispatchItems->sum('dispatch_qty');
-
-            $item->total_dispatched_qty = $dispatchedQty;
-            $item->remaining_qty = $orderedQty - $dispatchedQty;
-
-            $totalOrdered += $orderedQty;
-            $totalDispatched += $dispatchedQty;
+        if (!$order) {
+            return response()->json([
+                'status' => 404,
+                'message' => ['Order not found'],
+                'result' => (object)[]
+            ], 404);
         }
-
-        // status logic
-        if ($totalDispatched == 0) {
-            $dispatchStatus = 'pending';
-        } elseif ($totalDispatched < $totalOrdered) {
-            $dispatchStatus = 'in_progress';
-        } else {
-            $dispatchStatus = 'complete';
-        }
-
-        $order->dispatch_status = $dispatchStatus;
-        $order->total_dispatched_qty = $totalDispatched;
-        $order->remaining_qty = $totalOrdered - $totalDispatched;
 
         return response()->json([
-            'status'  => 200,
-            'message' => 'Order fetched successfully',
-            'result'  => $order
+            'status' => 200,
+            'message' => ['Order fetched successfully'],
+            'result' => new OrderResource($order)
         ]);
     }
 }

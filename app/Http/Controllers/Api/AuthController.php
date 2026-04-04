@@ -14,8 +14,6 @@ use Carbon\Carbon;
 class AuthController extends Controller
 {
     /* ===================== LOGIN ===================== */
-
-
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -24,14 +22,8 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->errorResponse($validator->errors(), 'Validation error', 422);
+            return $this->errorResponse($validator->errors()->all(), 'Validation error', 422);
         }
-
-        $credentials = [
-            'mobile_number' => $request->mobile_number,
-            'password'      => $request->password,
-            'is_active'     => 1
-        ];
 
         $user = User::where('mobile_number', $request->mobile_number)
             ->where('is_active', 1)
@@ -45,34 +37,24 @@ class AuthController extends Controller
 
         $user = auth('api')->user();
 
-        // Generate refresh token
         $refreshToken = Str::random(64);
 
-
-        // Create new token
         RefreshToken::create([
             'user_id' => $user->id,
             'refresh_token' => $refreshToken,
             'expires_at' => Carbon::now()->addDays(30),
         ]);
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Login successful',
-            'result' => [
-                'access_token'  => $accessToken,
-                'refresh_token' => $refreshToken,
-                'token_type'    => 'bearer',
-                'expires_in'    => auth('api')->factory()->getTTL() * 60,
-                'user'          => $user
-            ]
-        ]);
+        return $this->successResponse([
+            'access_token'  => $accessToken,
+            'refresh_token' => $refreshToken,
+            'token_type'    => 'bearer',
+            'expires_in'    => auth('api')->factory()->getTTL() * 60,
+            'user'          => $user
+        ], 'Login successful');
     }
 
-
     /* ===================== REFRESH TOKEN ===================== */
-
-
     public function refresh(Request $request)
     {
         $request->validate([
@@ -93,25 +75,21 @@ class AuthController extends Controller
             return $this->errorResponse(null, 'User inactive', 401);
         }
 
-        // New access token
         $accessToken = auth('api')->login($user);
 
-        // Extend refresh token expiry
         $refresh->update([
             'expires_at' => Carbon::now()->addDays(30),
         ]);
 
         return $this->successResponse([
             'access_token'  => $accessToken,
-            'refresh_token' => $request->refresh_token, // SAME TOKEN
+            'refresh_token' => $request->refresh_token,
             'token_type'    => 'bearer',
             'expires_in'    => auth('api')->factory()->getTTL() * 60
         ], 'Token refreshed successfully');
     }
 
-
-
-    /* ===================== REGISTER USER (ADMIN ONLY) ===================== */
+    /* ===================== REGISTER USER ===================== */
     public function registerUser(Request $request)
     {
         $admin = auth('api')->user();
@@ -132,11 +110,9 @@ class AuthController extends Controller
             'id'            => 'nullable|integer|min:0',
             'name'          => 'required|string|max:255',
 
-
             'mobile_number' => 'required|string|max:20|unique:users,mobile_number,' . ($id ?: 'NULL') . ',id,business_code,' . $admin->business_code,
 
             'password'      => $id ? 'nullable|string|min:6' : 'required|string|min:6',
-
 
             'email'         => 'nullable|email|unique:users,email,' . ($id ?: 'NULL') . ',id,business_code,' . $admin->business_code,
 
@@ -147,17 +123,16 @@ class AuthController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return $this->errorResponse($validator->errors(), 'Validation error', 422);
+            return $this->errorResponse($validator->errors()->all(), 'Validation error', 422);
         }
 
-        /* ========= ADD USER ========= */
         if ($id == 0) {
 
             $user = new User();
             $user->password = $request->password;
             $message = 'User registered successfully';
-        } else {
 
+        } else {
 
             $user = User::where('id', $id)
                 ->where('business_code', $admin->business_code)
@@ -182,40 +157,128 @@ class AuthController extends Controller
         $user->is_active     = $request->is_active;
         $user->role          = $request->role;
 
-
         $user->business_code = $admin->business_code;
         $user->business_name = $admin->business_name;
+        $user->created_by    = $admin->id;
 
         $user->save();
 
-        return $this->successResponse($user, $message, 200);
+        return $this->successResponse($user, $message);
     }
 
-
-    public function userList(Request $request)
-    {
-        try {
-            $admin = auth('api')->user();
-        } catch (\Exception $e) {
-            return $this->errorResponse(null, 'Invalid token', 401);
-        }
-
-        if ($admin->role !== 'admin') {
-            return $this->errorResponse(null, 'Only admin can view users', 403);
-        }
-
-        $request->validate([
-            'role' => 'required|string'
-        ]);
-
-        $users = User::where('business_code', $admin->business_code)
-            ->where('role', $request->query('role'))
-            ->orderBy('id', 'desc')
-            ->get();
-
-        return $this->successResponse($users, 'User list fetched successfully');
+    /* ===================== USER LIST ===================== */
+  public function userList(Request $request)
+{
+    try {
+        $admin = auth('api')->user();
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 401,
+            'message' => ['Invalid token'],
+            'result' => (object)[]
+        ], 401);
     }
 
+    if ($admin->role !== 'admin') {
+        return response()->json([
+            'status' => 403,
+            'message' => ['Only admin can view users'],
+            'result' => (object)[]
+        ], 403);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'role' => 'required|string'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'message' => $validator->errors()->all(),
+            'result' => (object)[]
+        ], 422);
+    }
+
+    $role = $request->role;
+
+    $users = User::where('created_by', $admin->id)
+        ->where('role', $role)
+        ->orderBy('id', 'desc')
+        ->get();
+
+
+    $message = ucfirst($role) . ' list fetched successfully';
+
+    return response()->json([
+        'status' => 200,
+        'message' => [$message],
+        'result' => $users
+    ]);
+}
+
+
+
+    public function deleteUser(Request $request)
+{
+    $admin = auth('api')->user();
+
+    if (!$admin) {
+        return response()->json([
+            'status' => 401,
+            'message' => ['Invalid token'],
+            'result' => (object)[]
+        ], 401);
+    }
+
+    if ($admin->role !== 'admin') {
+        return response()->json([
+            'status' => 403,
+            'message' => ['Only admin can delete users'],
+            'result' => (object)[]
+        ], 403);
+    }
+
+    $validator = Validator::make($request->all(), [
+        'user_id' => 'required|integer|exists:users,id'
+    ]);
+
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 422,
+            'message' => $validator->errors()->all(),
+            'result' => (object)[]
+        ], 422);
+    }
+
+    $user = User::where('id', $request->user_id)
+        ->where('business_code', $admin->business_code)
+        ->first();
+
+    if (!$user) {
+        return response()->json([
+            'status' => 404,
+            'message' => ['User not found'],
+            'result' => (object)[]
+        ], 404);
+    }
+
+    // Prevent admin from deleting himself
+    if ($user->id == $admin->id) {
+        return response()->json([
+            'status' => 400,
+            'message' => ['You cannot delete yourself'],
+            'result' => (object)[]
+        ], 400);
+    }
+
+    $user->delete();
+
+    return response()->json([
+        'status' => 200,
+        'message' => ['User deleted successfully'],
+        'result' => (object)[]
+    ]);
+}
 
     /* ===================== COMMON RESPONSE ===================== */
 
@@ -223,8 +286,8 @@ class AuthController extends Controller
     {
         return response()->json([
             'status'  => $status,
-            'message' => $message,
-            'result'  => $result
+            'message' => [(string) $message],
+            'result'  => $result ?? (object)[]
         ], $status);
     }
 
@@ -232,18 +295,8 @@ class AuthController extends Controller
     {
         return response()->json([
             'status'  => $status,
-            'message' => $message,
-            'result'  => $result
+            'message' => [(string) $message],
+            'result'  => $result ?? (object)[]
         ], $status);
-    }
-
-    protected function tokenResult($token)
-    {
-        return [
-            'token'       => $token,
-            'token_type'  => 'bearer',
-            'expires_in'  => auth('api')->factory()->getTTL() * 60,
-            'user'        => auth('api')->user()
-        ];
     }
 }

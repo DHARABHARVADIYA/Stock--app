@@ -32,9 +32,10 @@ class OrderResource extends JsonResource
             }),
 
             'remaining_qty' => $this->items->sum('qty') -
-            $this->items->sum(function ($item) {
-                return $item->dispatchItems->sum('dispatch_qty');
-            }),
+                $this->items->sum(function ($item) {
+                    return $item->dispatchItems->sum('dispatch_qty');
+                }),
+
 
             'site_name' => optional(optional($this->siteVisit)->site)->name,
 
@@ -46,6 +47,12 @@ class OrderResource extends JsonResource
                     'amount'     => (float) $item->amount
                 ];
             })->values(),
+
+            'salesman' => [
+                'id'     => (int) optional($this->creator)->id,
+                'name'   => optional($this->creator)->name,
+                'number' => optional($this->creator)->mobile_number,
+            ],
         ];
     }
 }
