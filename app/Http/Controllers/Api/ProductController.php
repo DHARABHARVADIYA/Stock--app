@@ -12,6 +12,16 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
+    /* ========== COMMON RESPONSE ========== */
+    protected function sendResponse($status, $messages = [], $data = null)
+    {
+        return response()->json([
+            'status' => $status,
+            'message' => (array) $messages,
+            'result' => $data
+        ], $status);
+    }
+
     /* ========== ADD / UPDATE PRODUCT ========== */
     public function saveProduct(Request $request)
     {
@@ -47,11 +57,11 @@ class ProductController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'Validation error',
-                'result' => $validator->errors()
-            ], 422);
+            return $this->sendResponse(
+                422,
+                $validator->errors()->all(),
+                null
+            );
         }
 
         // ADD / UPDATE
@@ -64,11 +74,11 @@ class ProductController extends Controller
                 ->first();
 
             if (!$product) {
-                return response()->json([
-                    'status' => 404,
-                    'message' => 'Product not found',
-                    'result' => null
-                ], 404);
+                return $this->sendResponse(
+                    404,
+                    ['Product not found'],
+                    null
+                );
             }
         }
 
@@ -94,11 +104,11 @@ class ProductController extends Controller
 
         $product->save();
 
-        return response()->json([
-            'status' => 200,
-            'message' => $request->id == 0 ? 'Product added successfully' : 'Product updated successfully',
-            'result' => $product
-        ]);
+        return $this->sendResponse(
+            200,
+            [$request->id == 0 ? 'Product added successfully' : 'Product updated successfully'],
+            $product
+        );
     }
 
     /* ========== GET ALL PRODUCTS ========== */
@@ -110,11 +120,11 @@ class ProductController extends Controller
             ->orderBy('id', 'desc')
             ->get();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Product list',
-            'result' => $products
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Product list'],
+            $products
+        );
     }
 
     /* ========== GET PRODUCTS BY CATEGORY ========== */
@@ -122,7 +132,7 @@ class ProductController extends Controller
     {
         $user = auth('api')->user();
 
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'id' => [
                 'required',
                 Rule::exists('categories', 'id')->where(function ($query) use ($user) {
@@ -131,16 +141,24 @@ class ProductController extends Controller
             ]
         ]);
 
+        if ($validator->fails()) {
+            return $this->sendResponse(
+                422,
+                $validator->errors()->all(),
+                null
+            );
+        }
+
         $products = Product::where('category_id', $request->id)
             ->where('business_code', $user->business_code)
             ->orderBy('id', 'desc')
             ->get();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Products fetched successfully',
-            'result' => $products
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Products fetched successfully'],
+            $products
+        );
     }
 
     /* ========== DELETE PRODUCT ========== */
@@ -153,11 +171,11 @@ class ProductController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'Validation error',
-                'result' => $validator->errors()
-            ], 422);
+            return $this->sendResponse(
+                422,
+                $validator->errors()->all(),
+                null
+            );
         }
 
         $product = Product::where('id', $request->id)
@@ -165,11 +183,11 @@ class ProductController extends Controller
             ->first();
 
         if (!$product) {
-            return response()->json([
-                'status' => 404,
-                'message' => 'Product not found',
-                'result' => null
-            ], 404);
+            return $this->sendResponse(
+                404,
+                ['Product not found'],
+                null
+            );
         }
 
         // DELETE IMAGE
@@ -179,10 +197,10 @@ class ProductController extends Controller
 
         $product->delete();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Product deleted successfully',
-            'result' => null
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Product deleted successfully'],
+            null
+        );
     }
 }

@@ -125,6 +125,7 @@ Route::middleware(['auth:api', 'check.active', 'auth.only'])->group(function () 
 Route::middleware(['check.active', 'dispatcher'])->group(function () {
 
     Route::post('/dispatch/create', [DispatchController::class, 'store']);
+     Route::get('/dispatch/list', [DispatchController::class, 'list']);
 
 });
 

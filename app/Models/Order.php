@@ -42,16 +42,21 @@ class Order extends Model
         return $this->belongsTo(BillType::class, 'bill_type_id');
     }
     public function site()
-{
-    return $this->belongsTo(Site::class);
-}
-public function siteVisit()
-{
-    return $this->belongsTo(\App\Models\SiteVisit::class, 'site_visit_id');
-}
+    {
+        return $this->belongsTo(Site::class);
+    }
+    public function siteVisit()
+    {
+        return $this->belongsTo(\App\Models\SiteVisit::class, 'site_visit_id');
+    }
 
-public function dispatch()
-{
-    return $this->hasMany(Dispatch::class,'order_id');
-}
+    public function dispatch()
+    {
+        return $this->hasMany(Dispatch::class, 'order_id');
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }
