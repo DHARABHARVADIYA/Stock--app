@@ -1,0 +1,17 @@
+[25-Dec-2025 18:55:03 UTC] PHP Warning:  require(/home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/vendor/autoload.php): Failed to open stream: No such file or directory in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php on line 14
+[25-Dec-2025 18:55:03 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php on line 14
+[25-Dec-2025 18:55:24 UTC] PHP Warning:  require(/home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/vendor/autoload.php): Failed to open stream: No such file or directory in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php on line 14
+[25-Dec-2025 18:55:24 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php on line 14
+[25-Dec-2025 18:55:46 UTC] PHP Warning:  require(/home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/vendor/autoload.php): Failed to open stream: No such file or directory in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php on line 14
+[25-Dec-2025 18:55:46 UTC] PHP Fatal error:  Uncaught Error: Failed opening required '/home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/vendor/autoload.php' (include_path='.:/opt/alt/php83/usr/share/pear:/opt/alt/php83/usr/share/php:/usr/share/pear:/usr/share/php') in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/public/index.php on line 14
+[30-Dec-2025 18:22:12 UTC] PHP Parse error:  syntax error, unexpected namespaced name "Tymon\JWTAuth\Exceptions\Token..." in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/bootstrap/app.php on line 8
+[30-Dec-2025 18:22:36 UTC] PHP Parse error:  syntax error, unexpected namespaced name "Tymon\JWTAuth\Exceptions\Token..." in /home/p5u1mde99rti/public_html/api.udaanitsolution.in/bootstrap/app.php on line 8
