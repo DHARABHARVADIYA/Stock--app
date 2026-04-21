@@ -10,13 +10,13 @@ use Illuminate\Support\Facades\Validator;
 class VisitController extends Controller
 {
 
-   private function formatVisitResponse($visit)
+    private function formatVisitResponse($visit)
 {
     return [
         'id' => $visit->id,
         'leadGeneratedDate' => $visit->lead_generated_date,
 
-        // 🔹 BUSINESS FULL DATA
+
         'business' => $visit->business ? [
             'id' => $visit->business->id,
             'name' => $visit->business->name ?? null,
@@ -27,7 +27,7 @@ class VisitController extends Controller
             'address' => $visit->business->address ?? null,
         ] : null,
 
-        
+        // (optional) agar alag thi id pan rakhvi hoy
         'businessId' => $visit->business_id,
 
         'billType' => $visit->bill_type,
@@ -91,8 +91,6 @@ class VisitController extends Controller
         ],
     ];
 }
-
-
     /* ================= SAVE / UPDATE VISIT ================= */
     public function saveVisit(Request $request)
     {

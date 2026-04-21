@@ -10,6 +10,15 @@ use Validator;
 
 class SiteController extends Controller
 {
+    /* ========== COMMON RESPONSE ========== */
+    protected function sendResponse($status, $messages = [], $data = null, $code = 200)
+    {
+        return response()->json([
+            'status' => $status,
+            'message' => (array) $messages,
+            'result' => $data ?? (object)[]
+        ], $code);
+    }
 
     // ================= Get All =================
     public function index()
@@ -18,23 +27,20 @@ class SiteController extends Controller
 
         $query = Site::query();
 
-
         if ($user->role == 'admin') {
             $query->where('business_code', $user->business_code);
-        }
-
-        else if ($user->role == 'sales') {
+        } else if ($user->role == 'sales') {
             $query->where('created_by', $user->id);
         }
 
         $sites = $query->latest()->get();
 
-        return response()->json([
-            'status' => true,
-            'data' => SiteResource::collection($sites)
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Site list fetched'],
+            SiteResource::collection($sites)
+        );
     }
-
 
     // ================= Get By ID =================
     public function getById(Request $request)
@@ -52,18 +58,20 @@ class SiteController extends Controller
         $site = $query->first();
 
         if (!$site) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Site not found'
-            ]);
+            return $this->sendResponse(
+                404,
+                ['Site not found'],
+                (object)[],
+                404
+            );
         }
 
-        return response()->json([
-            'status' => true,
-            'data' => new SiteResource($site)
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Site fetched successfully'],
+            new SiteResource($site)
+        );
     }
-
 
     // ================= Save (Add / Update) =================
     public function save(Request $request)
@@ -81,15 +89,20 @@ class SiteController extends Controller
             'contract_type' => 'required|integer',
             'construction_stage' => 'required|integer',
 
+            'required_balance' => 'nullable|string',
+            'project_duration' => 'nullable|string',
+
             'mason_types' => 'nullable|array',
             'mason_types.*' => 'integer',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'errors' => $validator->errors()
-            ], 422);
+            return $this->sendResponse(
+                422,
+                $validator->errors()->all(),
+                (object)[],
+                422
+            );
         }
 
         // Update / Insert
@@ -106,14 +119,15 @@ class SiteController extends Controller
             $site = $query->first();
 
             if (!$site) {
-                return response()->json([
-                    'status' => false,
-                    'message' => 'Site not found'
-                ]);
+                return $this->sendResponse(
+                    404,
+                    ['Site not found'],
+                    (object)[],
+                    404
+                );
             }
         } else {
             $site = new Site();
-
 
             $site->created_by = $user->id;
             $site->business_code = $user->business_code;
@@ -170,6 +184,9 @@ class SiteController extends Controller
             'floor_level' => $request->floor_level,
             'project_size' => $request->project_size,
 
+            'required_balance' => $request->required_balance,
+            'project_duration' => $request->project_duration,
+
             'mason_types' => $request->masonTypes ?? [],
 
             'one_hb_owner_name' => $request->one_hb_owner_name,
@@ -205,19 +222,18 @@ class SiteController extends Controller
 
             'next_followup_date' => $request->nextFollowupDate,
 
-            'salesman_id' => $request->salesMenId,
-            'salesman_name' => $request->saleMenName,
+            'salesman_id' => $user->id,
+            'salesman_name' => $user->name,
         ]);
 
         $site->save();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Site saved successfully',
-            'data' => new SiteResource($site)
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Site saved successfully'],
+            new SiteResource($site)
+        );
     }
-
 
     // ================= Delete =================
     public function delete(Request $request)
@@ -235,17 +251,20 @@ class SiteController extends Controller
         $site = $query->first();
 
         if (!$site) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Site not found'
-            ]);
+            return $this->sendResponse(
+                404,
+                ['Site not found'],
+                (object)[],
+                404
+            );
         }
 
         $site->delete();
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Site deleted successfully'
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Site deleted successfully'],
+            (object)[]
+        );
     }
 }

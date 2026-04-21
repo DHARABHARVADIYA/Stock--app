@@ -10,6 +10,8 @@ class Dispatch extends Model
 protected $table = 'dispatch';
 
 protected $fillable = [
+    'business_code',
+    'created_by',
 
     'order_id',
     'status',

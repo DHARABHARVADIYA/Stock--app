@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
 use Tymon\JWTAuth\Exceptions\TokenInvalidException;
 
@@ -14,57 +14,51 @@ class AdminMiddleware
     {
         try {
 
-
             if (!$request->bearerToken()) {
                 return response()->json([
                     'status'  => 401,
-                    'message' => 'Token not provided',
-                    'result'  => null
+                    'message' => ['Token not provided'],
+                    'data'    => null
                 ], 401);
             }
 
+            $user = JWTAuth::parseToken()->authenticate();
 
-            if (!Auth::guard('api')->check()) {
+            if (!$user) {
                 return response()->json([
                     'status'  => 401,
-                    'message' => 'Invalid token',
-                    'result'  => null
+                    'message' => ['Unauthenticated'],
+                    'data'    => null
                 ], 401);
             }
-
-            $user = Auth::guard('api')->user();
-
 
             if ($user->role !== 'admin') {
                 return response()->json([
                     'status'  => 403,
-                    'message' => 'Only admin allowed',
-                    'result'  => null
+                    'message' => ['Only admin allowed'],
+                    'data'    => null
                 ], 403);
             }
 
         } catch (TokenExpiredException $e) {
-
             return response()->json([
                 'status'  => 401,
-                'message' => 'Token expired',
-                'result'  => null
+                'message' => ['Token expired'],
+                'data'    => null
             ], 401);
 
         } catch (TokenInvalidException $e) {
-
             return response()->json([
                 'status'  => 401,
-                'message' => 'Token invalid',
-                'result'  => null
+                'message' => ['Token invalid'],
+                'data'    => null
             ], 401);
 
         } catch (\Exception $e) {
-
             return response()->json([
                 'status'  => 401,
-                'message' => 'Unauthorized',
-                'result'  => null
+                'message' => ['Unauthorized'],
+                'data'    => null
             ], 401);
         }
 

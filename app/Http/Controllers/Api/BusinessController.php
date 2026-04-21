@@ -14,6 +14,7 @@ class BusinessController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'id'           => 'nullable|integer',
+             'business_name' => 'required|string|max:255',
             'owner_name'   => 'required|string|max:255',
             'owner_number' => 'required|string|max:20',
             'gst_number'   => 'nullable|string|max:50',
@@ -33,6 +34,7 @@ class BusinessController extends Controller
         if ($id == 0) {
             // CREATE
             $business = Business::create($request->only([
+                'business_name',
                 'owner_name',
                 'owner_number',
                 'gst_number',
@@ -52,6 +54,7 @@ class BusinessController extends Controller
             }
 
             $business->update($request->only([
+                'business_name',
                 'owner_name',
                 'owner_number',
                 'gst_number',

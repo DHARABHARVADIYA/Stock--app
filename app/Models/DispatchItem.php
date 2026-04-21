@@ -15,7 +15,8 @@ protected $fillable = [
 'order_item_id',
 'product_id',
 'ordered_qty',
-'dispatch_qty'
+'dispatch_qty',
+ 'cancel_qty'
 
 ];
 

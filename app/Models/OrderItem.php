@@ -16,12 +16,16 @@ class OrderItem extends Model
         'product_id',
         'qty',
         'price',
+        'amount',
+
     ];
 
      protected $casts = [
 
         'price' => 'float',
         'qty'   => 'integer',
+        'amount' => 'float',
+
     ];
 
     public function order()
@@ -34,8 +38,8 @@ class OrderItem extends Model
         return $this->belongsTo(Product::class, 'product_id');
     }
 
-    public function dispatchItems()
-    {
-        return $this->hasMany(DispatchItem::class,'order_item_id');
-    }
+   public function dispatchItems()
+{
+    return $this->hasMany(DispatchItem::class, 'order_item_id');
+}
 }

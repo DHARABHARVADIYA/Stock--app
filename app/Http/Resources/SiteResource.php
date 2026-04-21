@@ -4,11 +4,28 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Carbon\Carbon;
+
 
 class SiteResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+
+          $lastOrder = \App\Models\Order::where('site_visit_id', $this->id)
+                        ->latest('created_at')
+                        ->first();
+
+
+        if ($lastOrder) {
+            $date = $lastOrder->created_at;
+        } else {
+            $date = $this->created_at;
+        }
+
+        $days = Carbon::parse($date)->diffInDays(now());
+        $isExpiry = $days > 15 ? true : false;
+
         return [
 
             "id" => $this->id,
@@ -49,6 +66,9 @@ class SiteResource extends JsonResource
             "BrandUsed" => $this->brand_used,
             "floorLevel" => $this->floor_level,
             "projectSize" => $this->project_size,
+
+            "requiredBalance" => $this->required_balance,
+            "projectDuration" => $this->project_duration,
 
             "masonTypes" => $this->mason_types ?? [],
 
@@ -92,6 +112,8 @@ class SiteResource extends JsonResource
 
             "salesMenId" => (int) $this->salesman_id,
             "saleMenName" => $this->salesman_name,
+
+             "isExpiry" => $isExpiry,
         ];
     }
 }

@@ -8,18 +8,20 @@ class SiteVisit extends Model
 {
     protected $table = 'site_visits';
 
-    protected $fillable = [
-        'site_id',
-        'sales_man_id',
-        'visit_date',
-        'next_visit_date',
-        'order_id',
-        'order_amount',
-        'note',
-        'visit_image',
-        'latitude',
-        'longitude',
-    ];
+   protected $fillable = [
+    'site_id',
+    'sales_man_id',
+    'sales_man_name',
+    'visit_date',
+    'next_visit_date',
+    'order_id',
+    'order_amount',
+    'note',
+    'visit_image',
+    'latitude',
+    'longitude',
+];
+
 
     // Relations
     public function site()

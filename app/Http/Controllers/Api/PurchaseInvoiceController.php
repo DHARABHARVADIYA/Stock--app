@@ -12,54 +12,61 @@ use DB;
 
 class PurchaseInvoiceController extends Controller
 {
+    /* ========== COMMON RESPONSE ========== */
+    protected function sendResponse($status, $messages = [], $data = null, $code = 200)
+    {
+        return response()->json([
+            'status' => $status,
+            'message' => (array) $messages,
+            'result' => $data ?? (object)[]
+        ], $code);
+    }
+
     /* ================= SAVE ================= */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
 
-            'billNo' => 'nullable',
-            'billDate' => 'nullable|date',
-            'sellerName' => 'nullable',
-            'sellerAddress' => 'nullable',
-            'sellerGstNo' => 'nullable',
-            'sellerMobileNumber' => 'nullable',
+            'billNo' => 'required',
+            'billDate' => 'required|date',
+            'sellerName' => 'required',
+            'sellerMobileNumber' => 'required',
 
-            'subTotal' => 'nullable|numeric',
-            'gstTotal' => 'nullable|numeric',
-            'grossTotal' => 'nullable|numeric',
-            'discount' => 'nullable|numeric',
-            'grandTotal' => 'nullable|numeric',
+            'subTotal' => 'required|numeric',
+            'gstTotal' => 'required|numeric',
+            'grossTotal' => 'required|numeric',
+            'discount' => 'required|numeric',
+            'grandTotal' => 'required|numeric',
 
-            'cgst' => 'nullable|numeric',
-            'sgst' => 'nullable|numeric',
-            'igst' => 'nullable|numeric',
+            'items' => 'required|array',
+            'items.*.productId' => 'required|integer',
+            'items.*.qty' => 'required|integer',
+            'items.*.price' => 'required|numeric',
+            'items.*.amount' => 'required|numeric',
+            'items.*.gstPercent' => 'required|integer',
+            'items.*.gstAmount' => 'required|numeric',
+            'items.*.total' => 'required|numeric',
+            'items.*.itemDiscount' => 'nullable|numeric',
 
-            'paymentMode' => 'nullable|integer',
-            'remarks' => 'nullable',
-
-            'items' => 'nullable|array',
-            'items.*.productId' => 'nullable|integer',
-            'items.*.qty' => 'nullable|integer',
-            'items.*.price' => 'nullable|numeric',
-            'items.*.amount' => 'nullable|numeric',
-            'items.*.gstPercent' => 'nullable|integer',
-            'items.*.gstAmount' => 'nullable|numeric',
-            'items.*.total' => 'nullable|numeric',
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'status' => 422,
-                'message' => 'Validation error',
-                'result' => $validator->errors()
-            ]);
+            return $this->sendResponse(
+                422,
+                $validator->errors()->all(),
+                (object)[],
+                422
+            );
         }
 
         DB::beginTransaction();
 
         try {
 
+            $businessCode = auth()->user()->business_code;
+
             $invoice = PurchaseInvoice::create([
+                'business_code' => $businessCode,
                 'bill_no' => $request->billNo,
                 'bill_date' => $request->billDate,
                 'seller_name' => $request->sellerName,
@@ -89,94 +96,144 @@ class PurchaseInvoiceController extends Controller
                     'gst_percent' => $item['gstPercent'],
                     'gst_amount' => $item['gstAmount'],
                     'total' => $item['total'],
+                    'item_discount' => $item['itemDiscount'] ?? 0,
                 ]);
 
-                // PRODUCT STOCK UPDATE
+                // STOCK UPDATE
                 $product = Product::find($item['productId']);
                 if ($product) {
-                    $product->stock = $product->stock + $item['qty'];
+                    $product->stock += $item['qty'];
                     $product->save();
                 }
             }
 
             DB::commit();
 
-            return response()->json([
-                'status' => 200,
-                'message' => 'Purchase invoice saved successfully',
-                'result' => $invoice
-            ]);
+            return $this->sendResponse(
+                200,
+                ['Purchase invoice saved successfully'],
+                $invoice
+            );
+
         } catch (\Exception $e) {
+
             DB::rollBack();
 
-            return response()->json([
-                'status' => 500,
-                'message' => 'Something went wrong',
-                'result' => $e->getMessage()
-            ]);
+            return $this->sendResponse(
+                500,
+                ['Something went wrong'],
+                $e->getMessage(),
+                500
+            );
         }
     }
 
     /* ================= GET ================= */
     public function show(Request $request)
     {
-        $request->validate([
-            'id' => 'required|integer|exists:purchase_invoices,id'
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer'
         ]);
 
-        $invoice = PurchaseInvoice::with('items')->find($request->id);
+        if ($validator->fails()) {
+            return $this->sendResponse(
+                422,
+                $validator->errors()->all(),
+                (object)[],
+                422
+            );
+        }
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Purchase invoice fetched',
-            'result' => $invoice
-        ]);
+        $businessCode = auth()->user()->business_code;
+
+        $invoice = PurchaseInvoice::with('items')
+            ->where('business_code', $businessCode)
+            ->where('id', $request->id)
+            ->first();
+
+        if (!$invoice) {
+            return $this->sendResponse(
+                404,
+                ['Invoice not found'],
+                (object)[],
+                404
+            );
+        }
+
+        return $this->sendResponse(
+            200,
+            ['Purchase invoice fetched'],
+            $invoice
+        );
     }
-
 
     /* ================= DELETE ================= */
-
     public function destroy(Request $request)
     {
-        $request->validate([
-            'id' => 'required|integer|exists:purchase_invoices,id'
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer'
         ]);
 
-        $invoice = PurchaseInvoice::find($request->id);
+        if ($validator->fails()) {
+            return $this->sendResponse(
+                422,
+                $validator->errors()->all(),
+                (object)[],
+                422
+            );
+        }
 
-        // Optional: related items delete
+        $businessCode = auth()->user()->business_code;
+
+        $invoice = PurchaseInvoice::where('business_code', $businessCode)
+            ->where('id', $request->id)
+            ->first();
+
+        if (!$invoice) {
+            return $this->sendResponse(
+                404,
+                ['Invoice not found'],
+                (object)[],
+                404
+            );
+        }
+
         $invoice->items()->delete();
-
         $invoice->delete();
 
-        return response()->json([
-            'status' => 200,
-            'message' => 'Purchase invoice deleted successfully'
-        ]);
+        return $this->sendResponse(
+            200,
+            ['Purchase invoice deleted successfully'],
+            (object)[]
+        );
     }
-
 
     /* ================= LIST ================= */
     public function list(Request $request)
     {
         try {
 
+            $businessCode = auth()->user()->business_code;
+
             $invoices = PurchaseInvoice::with('items')
+                ->where('business_code', $businessCode)
                 ->orderBy('id', 'desc')
                 ->get();
 
-            return response()->json([
-                'status' => 200,
-                'message' => 'Purchase invoice list fetched successfully',
-                'result' => $invoices
-            ]);
+            return $this->sendResponse(
+                200,
+                ['Purchase invoice list fetched successfully'],
+                $invoices
+            );
+
         } catch (\Exception $e) {
 
-            return response()->json([
-                'status' => 500,
-                'message' => 'Something went wrong',
-                'result' => $e->getMessage()
-            ]);
+            return $this->sendResponse(
+                500,
+                ['Something went wrong'],
+                $e->getMessage(),
+                500
+            );
         }
     }
 }

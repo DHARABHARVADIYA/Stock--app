@@ -15,10 +15,11 @@ use App\Http\Controllers\Api\DispatchController;
 
 
 
-
 Route::get('/ping', function () {
     return response()->json(['pong' => true]);
 });
+
+
 
 Route::get('/check-api', function () {
     return response()->json([
@@ -51,24 +52,24 @@ Route::middleware('admin')->group(function () {
     Route::post('/category/save', [CategoryController::class, 'saveCategory']);
     Route::post('/product/save', [ProductController::class, 'saveProduct']);
 
-     Route::delete('/product/delete', [ProductController::class, 'deleteProduct']);
-     Route::delete('/category/delete', [CategoryController::class, 'deleteCategory']);
-
+    Route::delete('/product/delete', [ProductController::class, 'deleteProduct']);
+    Route::delete('/category/delete', [CategoryController::class, 'deleteCategory']);
 
     Route::get('/users', [AuthController::class, 'userList']);
+    Route::delete('/user/delete', [AuthController::class, 'deleteUser']);
+
 
 
     Route::post('/purchase-invoice/save', [PurchaseInvoiceController::class, 'store']);
     Route::get('/purchase-invoice', [PurchaseInvoiceController::class, 'show']);
     Route::delete('/purchase-invoice', [PurchaseInvoiceController::class, 'destroy']);
+
     Route::get('/purchase-invoice/list', [PurchaseInvoiceController::class, 'list']);
-
-
 });
 
 //sales side
 
-Route::middleware(['auth:api', 'check.active', 'sales'])->group(function () {
+Route::middleware(['auth.only', 'check.active', 'sales'])->group(function () {
 
     Route::post('/visit/save', [VisitController::class, 'saveVisit']);
     Route::get('/visits', [VisitController::class, 'getAllVisit']);
@@ -89,29 +90,68 @@ Route::middleware(['auth:api', 'check.active', 'sales'])->group(function () {
     Route::delete('/order/delete', [OrderController::class, 'destroy']);
     Route::get('/order/by-id', [OrderController::class, 'getById']);
 
-
     // Sites API
-    Route::post('/site/save', [SiteController::class, 'save']);
-    Route::get('/sites', [SiteController::class, 'index']);
-    Route::get('/site/by-id', [SiteController::class, 'getById']);
-    Route::delete('/site/delete', [SiteController::class, 'delete']);
+
+
+
 
     //site visit
-
-    Route::post('/site-visit/save', [SiteVisitController::class, 'save']);
-    Route::get('/site-visits', [SiteVisitController::class, 'index']);
-    Route::get('/site-visits/by-site', [SiteVisitController::class, 'getBySite']);
-    Route::delete('/site-visit/delete', [SiteVisitController::class, 'delete']);
-
 
 
 });
 
 
 
-//login user all
+//accounts side
 
-Route::middleware(['auth:api', 'check.active', 'auth.only'])->group(function () {
+Route::middleware(['auth.only', 'check.active', 'accounts'])->group(function () {
+
+    Route::post('/visit/save', [VisitController::class, 'saveVisit']);
+    Route::get('/visits', [VisitController::class, 'getAllVisit']);
+    Route::delete('/visit/delete', [VisitController::class, 'deleteVisit']);
+
+    Route::post('/business/save', [BusinessController::class, 'saveBusiness']);
+    Route::get('/businesses', [BusinessController::class, 'getBusinesses']);
+    Route::delete('/business/delete', [BusinessController::class, 'deleteBusiness']);
+
+    Route::get('/visits/by-business', [VisitController::class, 'getVisitByBusiness']);
+
+    Route::get('/products/by-category', [ProductController::class, 'getProductsByCategory']);
+
+    //order
+    Route::post('/order/save', [OrderController::class, 'store']);
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/by-visit', [OrderController::class, 'getByVisit']);
+    Route::delete('/order/delete', [OrderController::class, 'destroy']);
+    Route::get('/order/by-id', [OrderController::class, 'getById']);
+
+    // Sites API
+
+
+
+    Route::post('/category/save', [CategoryController::class, 'saveCategory']);
+    Route::post('/product/save', [ProductController::class, 'saveProduct']);
+
+    Route::delete('/product/delete', [ProductController::class, 'deleteProduct']);
+    Route::delete('/category/delete', [CategoryController::class, 'deleteCategory']);
+
+    Route::get('/users', [AuthController::class, 'userList']);
+    Route::delete('/user/delete', [AuthController::class, 'deleteUser']);
+
+
+
+    Route::post('/purchase-invoice/save', [PurchaseInvoiceController::class, 'store']);
+    Route::get('/purchase-invoice', [PurchaseInvoiceController::class, 'show']);
+    Route::delete('/purchase-invoice', [PurchaseInvoiceController::class, 'destroy']);
+
+    Route::get('/purchase-invoice/list', [PurchaseInvoiceController::class, 'list']);
+
+    Route::post('/dispatch/create', [DispatchController::class, 'store']);
+});
+
+
+
+Route::middleware(['auth.only', 'check.active'])->group(function () {
 
     Route::get('/categories', [CategoryController::class, 'getCategories']);
     Route::get('/products', [ProductController::class, 'getProducts']);
@@ -119,17 +159,33 @@ Route::middleware(['auth:api', 'check.active', 'auth.only'])->group(function () 
 });
 
 
-
-//dispatcher
-
 Route::middleware(['check.active', 'dispatcher'])->group(function () {
 
     Route::post('/dispatch/create', [DispatchController::class, 'store']);
-
 });
 
-Route::middleware(['auth:api','check.active','role:admin,sales,dispatcher'])->group(function () {
+
+//common route display dispatcher
+Route::middleware(['auth:api', 'check.active', 'role:admin,sales,dispatcher,accounts'])->group(function () {
 
     Route::get('/dispatch/list', [DispatchController::class, 'list']);
 
+    Route::get('/orders', [OrderController::class, 'index']);
+    Route::get('/orders/by-visit', [OrderController::class, 'getByVisit']);
+
+    Route::get('/order/by-id', [OrderController::class, 'getById']);
+});
+
+
+Route::middleware([ 'auth.only','check.active', 'role:admin,sales,accounts'])->group(function () {
+
+    Route::post('/site/save', [SiteController::class, 'save']);
+    Route::get('/sites', [SiteController::class, 'index']);
+    Route::get('/site/by-id', [SiteController::class, 'getById']);
+    Route::delete('/site/delete', [SiteController::class, 'delete']);
+
+        Route::post('/site-visit/save', [SiteVisitController::class, 'save']);
+    Route::get('/site-visits', [SiteVisitController::class, 'index']);
+    Route::get('/site-visits/by-site', [SiteVisitController::class, 'getBySite']);
+    Route::delete('/site-visit/delete', [SiteVisitController::class, 'delete']);
 });

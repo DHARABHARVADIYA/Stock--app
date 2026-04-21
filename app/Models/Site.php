@@ -10,11 +10,11 @@ class Site extends Model
 
     protected $fillable = [
 
-        // Basic
+
         'order_id',
         'lead_generated_date',
 
-        // Business Info (Direct Columns)
+
         'name',
         'owner_name',
         'owner_number',
@@ -22,18 +22,18 @@ class Site extends Model
         'email',
         'address',
 
-        // Manager
+
         'manager_name',
         'manager_mobile_no',
 
-        // Billing
+
         'bill_type',
 
-        // Delivery
+
         'delivery_address',
         'delivery_mobile_no',
 
-        // Other Details
+
         'additional_details',
 
         'birthday',
@@ -41,11 +41,11 @@ class Site extends Model
 
         'contract_type',
 
-        // Location
+
         'project_location_latitude',
         'project_location_longitude',
 
-        // Image
+
         'project_site_image',
 
         'construction_stage',
@@ -54,13 +54,18 @@ class Site extends Model
         'floor_level',
         'project_size',
 
+
+
         'mason_types',
 
-        // 1HB
+        'required_balance',
+        'project_duration',
+
+
         'one_hb_owner_name',
         'one_hb_owner_number',
 
-        // RMC
+
         'rmc_plant_owner_name',
         'rmc_plant_owner_number',
         'rmc_purchase_name',
@@ -68,7 +73,7 @@ class Site extends Model
         'rmc_lab_testing_name',
         'rmc_lab_testing_number',
 
-        // Builder
+
         'builder_owner_name',
         'builder_owner_number',
         'builder_purchase_name',
@@ -76,13 +81,13 @@ class Site extends Model
         'builder_supervisor_name',
         'builder_supervisor_number',
 
-        // LWB
+
         'lwb_owner_name',
         'lwb_owner_number',
         'lwb_purchase_name',
         'lwb_purchase_number',
 
-        // Other
+
         'architect_type',
         'plant_interchange',
         'project_type',
@@ -100,5 +105,10 @@ class Site extends Model
 
         'plant_interchange' => 'boolean',
     ];
+
+      public function orders()
+    {
+        return $this->hasMany(Order::class, 'site_visit_id');
+    }
 
 }
