@@ -81,14 +81,9 @@ Route::middleware(['auth.only', 'check.active', 'sales'])->group(function () {
 
     Route::get('/visits/by-business', [VisitController::class, 'getVisitByBusiness']);
 
-    Route::get('/products/by-category', [ProductController::class, 'getProductsByCategory']);
+   
 
-    //order
-    Route::post('/order/save', [OrderController::class, 'store']);
-    Route::get('/orders', [OrderController::class, 'index']);
-    Route::get('/orders/by-visit', [OrderController::class, 'getByVisit']);
-    Route::delete('/order/delete', [OrderController::class, 'destroy']);
-    Route::get('/order/by-id', [OrderController::class, 'getById']);
+  
 
     // Sites API
 
@@ -156,6 +151,7 @@ Route::middleware(['auth.only', 'check.active'])->group(function () {
     Route::get('/categories', [CategoryController::class, 'getCategories']);
     Route::get('/products', [ProductController::class, 'getProducts']);
     Route::get('/get-master', [MasterController::class, 'getMaster']);
+     Route::get('/products/by-category', [ProductController::class, 'getProductsByCategory']);
 });
 
 
@@ -170,9 +166,10 @@ Route::middleware(['auth:api', 'check.active', 'role:admin,sales,dispatcher,acco
 
     Route::get('/dispatch/list', [DispatchController::class, 'list']);
 
+    Route::post('/order/save', [OrderController::class, 'store']);
     Route::get('/orders', [OrderController::class, 'index']);
     Route::get('/orders/by-visit', [OrderController::class, 'getByVisit']);
-
+    Route::delete('/order/delete', [OrderController::class, 'destroy']);
     Route::get('/order/by-id', [OrderController::class, 'getById']);
 });
 
@@ -188,4 +185,8 @@ Route::middleware([ 'auth.only','check.active', 'role:admin,sales,accounts'])->g
     Route::get('/site-visits', [SiteVisitController::class, 'index']);
     Route::get('/site-visits/by-site', [SiteVisitController::class, 'getBySite']);
     Route::delete('/site-visit/delete', [SiteVisitController::class, 'delete']);
+    
+    
+      //order
+   
 });
