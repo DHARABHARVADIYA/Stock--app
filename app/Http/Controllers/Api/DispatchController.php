@@ -136,7 +136,7 @@ class DispatchController extends Controller
             $orderedQty = $orderItem->qty;
             $cancelQty = $item['cancel_qty'] ?? 0;
 
-            // ðŸ‘‰ ONLY cancel validation
+            // 👉 ONLY cancel validation
             $totalCancelled = DispatchItem::where('order_item_id', $item['order_item_id'])
                 ->sum('cancel_qty');
 
@@ -155,7 +155,7 @@ class DispatchController extends Controller
                 'cancel_qty' => $cancelQty
             ]);
 
-            // âœ… ONLY cancel stock add
+            // ✅ ONLY cancel stock add
             if ($cancelQty > 0) {
                 $product = Product::find($item['product_id']);
                 if ($product) {
@@ -180,7 +180,7 @@ class DispatchController extends Controller
             'items' => $itemsResponse
         ]);
     }
-
+    
        public function list()
     {
         try {

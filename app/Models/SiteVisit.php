@@ -11,7 +11,7 @@ class SiteVisit extends Model
    protected $fillable = [
     'site_id',
     'sales_man_id',
-    'sales_man_name',
+    'sales_man_name',   
     'visit_date',
     'next_visit_date',
     'order_id',

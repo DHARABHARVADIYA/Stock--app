@@ -24,7 +24,7 @@ class CategoryController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 422,
-                'message' => $validator->errors()->all(),
+                'message' => $validator->errors()->all(), 
                 'result' => (object)[]
             ], 422);
         }
@@ -62,8 +62,8 @@ class CategoryController extends Controller
         return response()->json([
             'status' => 200,
             'message' => [
-                $request->id == 0
-                    ? 'Category added successfully'
+                $request->id == 0 
+                    ? 'Category added successfully' 
                     : 'Category updated successfully'
             ],
             'data' => $category

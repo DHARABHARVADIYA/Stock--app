@@ -11,16 +11,16 @@ class SiteResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-
+           
           $lastOrder = \App\Models\Order::where('site_visit_id', $this->id)
                         ->latest('created_at')
                         ->first();
 
-
+        
         if ($lastOrder) {
             $date = $lastOrder->created_at;
         } else {
-            $date = $this->created_at;
+            $date = $this->created_at; 
         }
 
         $days = Carbon::parse($date)->diffInDays(now());
@@ -30,7 +30,10 @@ class SiteResource extends JsonResource
 
             "id" => $this->id,
 
-            "leadGeneratedDate" => $this->lead_generated_date,
+           'leadGeneratedDate' => $this->lead_generated_date
+    ? \Carbon\Carbon::parse($this->lead_generated_date)
+        ->format('Y-m-d H:i:s')
+    : null,
 
             "name" => $this->name,
             "ownerName" => $this->owner_name,
@@ -66,7 +69,7 @@ class SiteResource extends JsonResource
             "BrandUsed" => $this->brand_used,
             "floorLevel" => $this->floor_level,
             "projectSize" => $this->project_size,
-
+            
             "requiredBalance" => $this->required_balance,
             "projectDuration" => $this->project_duration,
 
@@ -108,11 +111,12 @@ class SiteResource extends JsonResource
 
             "projectType" => $this->project_type,
 
-            "nextFollowupDate" => $this->next_followup_date,
-
+         'nextFollowupDate' => $this->next_followup_date
+    ? \Carbon\Carbon::parse($this->next_followup_date)->format('Y-m-d H:i:s')
+    : null,
             "salesMenId" => (int) $this->salesman_id,
             "saleMenName" => $this->salesman_name,
-
+            
              "isExpiry" => $isExpiry,
         ];
     }

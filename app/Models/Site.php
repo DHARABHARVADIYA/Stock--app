@@ -10,7 +10,7 @@ class Site extends Model
 
     protected $fillable = [
 
-
+        
         'order_id',
         'lead_generated_date',
 
@@ -45,7 +45,7 @@ class Site extends Model
         'project_location_latitude',
         'project_location_longitude',
 
-
+        
         'project_site_image',
 
         'construction_stage',
@@ -53,15 +53,15 @@ class Site extends Model
         'brand_used',
         'floor_level',
         'project_size',
-
-
+        
+        
 
         'mason_types',
-
+        
         'required_balance',
         'project_duration',
 
-
+        
         'one_hb_owner_name',
         'one_hb_owner_number',
 
@@ -87,7 +87,7 @@ class Site extends Model
         'lwb_purchase_name',
         'lwb_purchase_number',
 
-
+        
         'architect_type',
         'plant_interchange',
         'project_type',
@@ -105,7 +105,7 @@ class Site extends Model
 
         'plant_interchange' => 'boolean',
     ];
-
+    
       public function orders()
     {
         return $this->hasMany(Order::class, 'site_visit_id');

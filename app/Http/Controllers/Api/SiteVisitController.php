@@ -32,8 +32,8 @@ class SiteVisitController extends Controller
 
         'site_id' => 'required|exists:sites,id',
         'sales_man_id' => 'nullable|exists:users,id',
-        'visit_date' => 'required|date',
-        'next_visit_date' => 'required|date|after_or_equal:visit_date',
+        'visit_date' => 'required|date_format:Y-m-d H:i:s',
+       'next_visit_date' => 'required|date_format:Y-m-d H:i:s|after_or_equal:visit_date',
         'order_id' => 'nullable|exists:orders,id',
         'order_amount' => 'nullable|numeric',
         'note' => 'nullable|string',
@@ -115,13 +115,25 @@ class SiteVisitController extends Controller
         $visit->visit_image = 'visits/' . $imageName;
     }
 
-    $visit->save();
+   $visit->save();
 
-    return $this->sendResponse(
-        200,
-        ['Site visit saved successfully'],
-        $this->formatVisit($visit)
-    );
+/*
+|--------------------------------------------------------------------------
+| Update Site next_followup_date
+|--------------------------------------------------------------------------
+*/
+Site::where('id', $request->site_id)
+    ->update([
+        'next_followup_date' => $request->next_visit_date
+    ]);
+
+return $this->sendResponse(
+    200,
+    ['Site visit saved successfully'],
+    $this->formatVisit($visit)
+);
+
+  
 }
 
     // ================= Get All =================
@@ -233,10 +245,12 @@ public function getBySite(Request $request)
         return [
             "id" => (int) $visit->id,
             "siteId" => (int) $visit->site_id,
+            "siteName" => optional($visit->site)->name,
             "salesManId" => $visit->sales_man_id ? (int) $visit->sales_man_id : null,
             "salesManName" => $visit->sales_man_name,
-            "date" => Carbon::parse($visit->visit_date)->format('Y-m-d'),
-            "nextVisitDate" => Carbon::parse($visit->next_visit_date)->format('Y-m-d'),
+            "date" => Carbon::parse($visit->visit_date)->format('Y-m-d H:i:s'),
+           "nextVisitDate" => Carbon::parse($visit->next_visit_date)
+    ->format('Y-m-d H:i:s'),
             "orderId" => $visit->order_id ? (int) $visit->order_id : null,
             "orderAmount" => $visit->order_amount ? (float) $visit->order_amount : null,
             "note" => $visit->note,

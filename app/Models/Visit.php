@@ -27,12 +27,12 @@ class Visit extends Model
         'mason_types' => 'array',
     ];
 
-    public function business()
-{
-    return $this->belongsTo(Business::class);
-}
-
-public function site()
+   public function business()
+    {
+        return $this->belongsTo(Business::class, 'business_id');
+    }
+    
+    public function site()
 {
     return $this->belongsTo(Site::class, 'site_id');
 }

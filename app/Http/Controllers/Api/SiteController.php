@@ -88,7 +88,7 @@ class SiteController extends Controller
             'bill_type' => 'required|integer',
             'contract_type' => 'required|integer',
             'construction_stage' => 'required|integer',
-
+            
             'required_balance' => 'nullable|string',
             'project_duration' => 'nullable|string',
 
@@ -146,6 +146,14 @@ class SiteController extends Controller
                 'masonTypes' => json_decode($request->masonTypes, true)
             ]);
         }
+        
+        $lastVisit = \App\Models\SiteVisit::where('site_id', $site->id)
+            ->latest('visit_date')
+            ->first();
+            
+       $nextFollowupDate = $lastVisit && $lastVisit->next_visit_date
+    ? Carbon::parse($lastVisit->next_visit_date)->format('Y-m-d H:i:s')
+    : null;
 
         // Save Data
         $site->fill([
@@ -183,7 +191,7 @@ class SiteController extends Controller
             'brand_used' => $request->brand_used,
             'floor_level' => $request->floor_level,
             'project_size' => $request->project_size,
-
+            
             'required_balance' => $request->required_balance,
             'project_duration' => $request->project_duration,
 
@@ -220,7 +228,7 @@ class SiteController extends Controller
             'plant_interchange' => (int) $request->plantInterchange,
             'project_type' => $request->projectType,
 
-            'next_followup_date' => $request->nextFollowupDate,
+            'next_followup_date' => $nextFollowupDate,
 
             'salesman_id' => $user->id,
             'salesman_name' => $user->name,

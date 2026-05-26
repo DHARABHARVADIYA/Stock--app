@@ -152,6 +152,8 @@ Route::middleware(['auth.only', 'check.active'])->group(function () {
     Route::get('/products', [ProductController::class, 'getProducts']);
     Route::get('/get-master', [MasterController::class, 'getMaster']);
      Route::get('/products/by-category', [ProductController::class, 'getProductsByCategory']);
+     
+     Route::get('/product/by-id', [ProductController::class, 'getProductById']);
 });
 
 

@@ -215,9 +215,9 @@ class AuthController extends Controller
         'result' => $users
     ]);
 }
-
-
-
+    
+    
+    
     public function deleteUser(Request $request)
 {
     $admin = auth('api')->user();

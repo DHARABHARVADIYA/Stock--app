@@ -9,7 +9,7 @@ class OrderResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
-
+        
         $totalDispatched = $this->items->sum(fn($item) => $item->dispatchItems->sum('dispatch_qty'));
         $totalCancelled = $this->items->sum(fn($item) => $item->dispatchItems->sum('cancel_qty'));
 
@@ -34,11 +34,11 @@ class OrderResource extends JsonResource
             'delivery_person_number' => $this->delivery_person_number,
             'delivery_address'       => $this->delivery_address,
 
-
+            
             'total_dispatched_qty' => $totalDispatched,
             'total_cancel_qty' => $totalCancelled,
 
-
+            
             'remaining_qty' => $this->items->sum('qty') - ($totalDispatched + $totalCancelled),
 
             // ================= ITEMS =================
@@ -56,9 +56,9 @@ class OrderResource extends JsonResource
                     'amount' => $item->amount,
 
                     'total_dispatched_qty' => $dispatched,
-                    'cancel_qty' => $cancelled,
+                    'cancel_qty' => $cancelled, 
 
-
+                    
                     'remaining_qty' => $item->qty - ($dispatched + $cancelled),
 
                     'product' => $item->product ? [
@@ -80,7 +80,7 @@ class OrderResource extends JsonResource
                             'ordered_qty' => $d->ordered_qty,
                             'dispatched_qty' => $d->dispatch_qty,
 
-                            'cancel_qty' => $d->cancel_qty,
+                            'cancel_qty' => $d->cancel_qty, 
 
                             'created_at' => $d->created_at,
 

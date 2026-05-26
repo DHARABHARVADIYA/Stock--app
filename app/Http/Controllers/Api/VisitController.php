@@ -16,7 +16,7 @@ class VisitController extends Controller
         'id' => $visit->id,
         'leadGeneratedDate' => $visit->lead_generated_date,
 
-
+       
         'business' => $visit->business ? [
             'id' => $visit->business->id,
             'name' => $visit->business->name ?? null,

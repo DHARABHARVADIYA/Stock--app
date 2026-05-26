@@ -47,7 +47,7 @@ class PurchaseInvoiceController extends Controller
             'items.*.gstAmount' => 'required|numeric',
             'items.*.total' => 'required|numeric',
             'items.*.itemDiscount' => 'nullable|numeric',
-
+            
         ]);
 
         if ($validator->fails()) {

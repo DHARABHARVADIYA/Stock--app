@@ -321,7 +321,7 @@ public function index()
 
     $order = Order::with([
         'items.product',
-        'items.dispatchItems',
+        'items.dispatchItems', 
         'dispatch',
         'creator',
         'siteVisit.site'

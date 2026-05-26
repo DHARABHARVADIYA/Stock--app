@@ -19,10 +19,10 @@ class OrderItem extends Model
         'amount',
 
     ];
-
+    
      protected $casts = [
-
-        'price' => 'float',
+        
+        'price' => 'float',   
         'qty'   => 'integer',
         'amount' => 'float',
 
@@ -37,7 +37,7 @@ class OrderItem extends Model
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
-
+    
    public function dispatchItems()
 {
     return $this->hasMany(DispatchItem::class, 'order_item_id');

@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use App\Models\PurchaseInvoiceItem;
+use App\Models\PurchaseInvoice;
 
 class ProductController extends Controller
 {
@@ -203,4 +205,74 @@ class ProductController extends Controller
             null
         );
     }
+    
+    
+     // product by id
+    
+    public function getProductById(Request $request)
+    {
+    $user = auth('api')->user();
+
+    $validator = Validator::make($request->all(), [
+        'id' => 'required|integer'
+    ]);
+
+    if ($validator->fails()) {
+        return $this->sendResponse(
+            422,
+            $validator->errors()->all(),
+            null
+        );
+    }
+
+    // Product Fetch
+    $product = Product::where('id', $request->id)
+        ->where('business_code', $user->business_code)
+        ->first();
+
+    if (!$product) {
+        return $this->sendResponse(
+            404,
+            ['Product not found'],
+            null
+        );
+    }
+
+    // Purchase Invoice Details
+    $purchaseDetails = PurchaseInvoiceItem::join(
+            'purchase_invoices',
+            'purchase_invoice_items.purchase_invoice_id',
+            '=',
+            'purchase_invoices.id'
+        )
+        ->where('purchase_invoice_items.product_id', $product->id)
+        ->where('purchase_invoices.business_code', $user->business_code)
+        ->select(
+            'purchase_invoice_items.id',
+            'purchase_invoice_items.qty',
+            'purchase_invoice_items.price',
+            'purchase_invoice_items.amount',
+            'purchase_invoice_items.gst_percent',
+            'purchase_invoice_items.gst_amount',
+            'purchase_invoice_items.total',
+
+            'purchase_invoices.bill_no',
+            'purchase_invoices.bill_date',
+            'purchase_invoices.seller_name',
+            'purchase_invoices.grand_total'
+        )
+        ->orderBy('purchase_invoice_items.id', 'desc')
+        ->get();
+
+    $result = [
+        'product' => $product,
+        'purchase_history' => $purchaseDetails
+    ];
+
+    return $this->sendResponse(
+        200,
+        ['Product details fetched successfully'],
+        $result
+    );
+}
 }
